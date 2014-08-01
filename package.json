@@ -1,0 +1,16 @@
+{
+  "name": "fizzle",
+  "version": "0.0.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-contrib-coffee": "^0.10.1",
+    "grunt-contrib-jasmine": "^0.7.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "source-map-support": "^0.2.7"
+  }
+}
