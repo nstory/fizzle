@@ -78,6 +78,7 @@ describe 'Fizzle', ->
       ['span > i', '<span a><i b><i c></i></i></span>', 'b']
       ['span+i', '<span></span><i a></i><i></i>', 'a']
       ['span + i', '<span></span><i a></i><i></i>', 'a']
+      ['SPAN', '<span a></span>', 'a']
     ]
 
     # the single-letter attribute present on the passed-in element
@@ -101,3 +102,8 @@ describe 'Fizzle', ->
           matched = (new Fizzle).find selector, element
           actual = (getCode e for e in matched)
           expect(actual.join '').toEqual expected
+
+    it 'starts at document if no context is passed in', ->
+      elems = (new Fizzle).find 'body'
+      expect(elems.length).toEqual 1
+      expect(elems[0].tagName).toEqual 'BODY'

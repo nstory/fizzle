@@ -3,15 +3,20 @@ class Fizzle
     @registerPseudoSelector 'first-child', (elem) ->
       elem.parentNode.firstChild == elem
 
-  find: (selector, element) ->
+  # evaluates the passed-in selector in the context of the passed-in element
+  # (or against the document as a whole if no element is passed in)
+  find: (selector, element=document) ->
     ast = @_parse (@_lex selector)
     @_eval ast, [element]
 
+  # register a custom pseudo selector
   registerPseudoSelector: (name, fn) ->
     @_pseudos[name] = fn
 
   _pseudos: {}
 
+  # evalulates the passed-in abstract syntax tree (as created by _parse)
+  # against the passed-in array of DOM elements
   _eval: (ast, context) ->
     [cmd, args...] = ast
     if 'tag' == cmd
