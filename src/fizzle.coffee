@@ -1,16 +1,26 @@
 class Fizzle
-  @find = (selector, start) ->
-    elements = []
-    if selector == '*'
-      elements.push start
-      for child in start.childNodes when child.nodeType == Node.ELEMENT_NODE
-        elements.push.apply elements, (@find selector, child)
-    else if /^[a-zA-Z]+$/.test selector
-      if start.tagName == selector.toUpperCase()
-        elements.push start
-      for child in start.childNodes when child.nodeType == Node.ELEMENT_NODE
-        elements.push.apply elements, (@find selector, child)
-    elements
+  @find = (selector, context) ->
+    ast = @_parse (@_lex selector)
+    @_eval ast, context
+
+  @_eval = (ast, context) ->
+    [cmd, args...] = ast
+    if /^([a-zA-Z0-9\-]+|\*)$/.test cmd
+      context.getElementsByTagName cmd
+    else if /^\./.test cmd
+      className = cmd.slice 1
+      (elem for elem in (@_eval args[0], context) when elem.className.split(' ').indexOf(className) != -1)
+    else if /^#/.test cmd
+      id = cmd.slice 1
+      (elem for elem in (@_eval args[0], context) when elem.id == id)
+    else if /^:first-child$/.test cmd
+      (elem for elem in (@_eval args[0], context) when elem.parentNode.firstChild == elem)
+    else if /^\[\]$/.test cmd
+      attribute = args[0]
+      unfiltered = (@_eval args[1], context)
+      (elem for elem in unfiltered when elem.hasAttribute(attribute))
+    else
+      throw new Error "unknown command #{cmd}"
 
   @_parse = (tokens) ->
     selector = ->

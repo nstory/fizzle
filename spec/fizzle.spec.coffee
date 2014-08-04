@@ -67,7 +67,11 @@ describe 'Fizzle', ->
     examples = [
       ['*', '<div a><span b></span><span c></span></div>', 'abc']
       ['span', '<div><span b></span><span c></span></div>', 'bc']
-      # ['span:first-child', '<div><span a/><span/></div>', 'a']
+      ['span.foo', '<div><span></span><span class="foo" c></span></div>', 'c']
+      ['span#foo', '<div><span a id="foo"></span><span></span></div>', 'a']
+      ['span:first-child', '<div><span a></span><span></span></div>', 'a']
+      ['span[foo]', '<div><span foo a></span><span></span></div>', 'a']
+      ['span[foo=bar]', '<div><span foo="bar" a></span><span foo="baz"></span></div>', 'a']
     ]
 
     # the single-letter attribute present on the passed-in element
