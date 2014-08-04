@@ -22,6 +22,7 @@ class Fizzle
     else
       throw new Error "unknown command #{cmd}"
 
+  # creates a parse tree from the passed-in array of tokens
   @_parse = (tokens) ->
     selector = ->
       node = simple_selector()
@@ -80,6 +81,8 @@ class Fizzle
 
     selector()
 
+  # breaks up the passed-in string into an array of "tokens" (really
+  # just strings)
   @_lex = (selector) ->
     re = ///^(
       \*
