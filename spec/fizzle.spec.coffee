@@ -15,8 +15,8 @@ describe 'Fizzle', ->
 
       # combining selectors
       'p span': ['p', ' ', 'span']
-      'p > span': ['p', ' ', '>', ' ', 'span']
-      'p + span': ['p', ' ', '+', ' ', 'span']
+      'p > foo': ['p', '>', 'foo']
+      'p + foo': ['p', '+', 'foo']
 
     for selector, tokens of examples
       do (tokens, selector) ->
@@ -65,7 +65,7 @@ describe 'Fizzle', ->
 
   describe 'find', ->
     examples = [
-      ['*', '<div a><span b></span><span c></span></div>', 'abc']
+      ['*', '<div a><span b></span><span c></span></div>', 'bc']
       ['span', '<div><span b></span><span c></span></div>', 'bc']
       ['span.foo', '<div><span></span><span class="foo" c></span></div>', 'c']
       ['span#foo', '<div><span a id="foo"></span><span></span></div>', 'a']

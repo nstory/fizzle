@@ -153,13 +153,16 @@ class Fizzle
      |=
      |~=
      |"[^"]*"
+     |(\x20*(>|\+)\x20*)
      |[\x20]+
-     |>
-     |\+
     )///
     tokens = []
     while matches = re.exec(selector)
-      tokens.push matches[0]
+      token = matches[0]
+      # only trim the token if it contains at least some non-whitespace
+      if /[^\x20]/.test token
+        token = token.trim()
+      tokens.push token
       selector = selector.slice matches[0].length
     if selector != ''
       throw new Error "unexpected character when tokenizing #{selector}"
