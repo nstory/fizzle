@@ -46,6 +46,16 @@ class Fizzle
     else if 'descendant' == cmd
       [parent_query, desc_query] = args
       (@_eval desc_query, (@_eval parent_query, context))
+    else if 'child' == cmd
+      [parent_query, child_query] = args
+      parent_elements = (@_eval parent_query, context)
+      desc_elements = (@_eval child_query, parent_elements)
+      elem for elem in desc_elements when parent_elements.indexOf(elem.parentNode) != -1
+    else if 'adjacent' == cmd
+      [left_query, right_query] = args
+      left_elements = (@_eval left_query, context)
+      right_elements = (@_eval right_query, context)
+      elem for elem in right_elements when left_elements.indexOf(elem.previousSibling) != -1
     else
       throw new Error "unknown command #{cmd}"
 

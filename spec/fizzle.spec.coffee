@@ -74,6 +74,10 @@ describe 'Fizzle', ->
       ['span[foo=bar]', '<div><span foo="bar" a></span><span foo="baz"></span></div>', 'a']
       ['span.foo.bar', '<div><span class="foo"></span><span class="bar foo" c></span></div>', 'c']
       ['span span', '<div><span a><span b></span></span></div>', 'b']
+      ['span>i', '<div><span a><i b><i c></i></i></span></div>', 'b']
+      ['span > i', '<div><span a><i b><i c></i></i></span></div>', 'b']
+      ['span+i', '<div><span></span><i a></i><i></i></div>', 'a']
+      ['span + i', '<div><span></span><i a></i><i></i></div>', 'a']
     ]
 
     # the single-letter attribute present on the passed-in element
