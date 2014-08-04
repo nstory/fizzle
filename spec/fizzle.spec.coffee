@@ -35,8 +35,8 @@ describe 'Fizzle', ->
 
       # attribute selectors
       [['span', '[', 'foo', ']'], ['has_attribute', 'foo', ['tag', 'span']]]
-      [['span', '[', 'foo', '=', '"bar"', ']'], ['attribute_equals', 'foo', '"bar"', ['tag', 'span']]]
-      [['span', '[', 'foo', '~=', '"bar"', ']'], ['attribute_contains', 'foo', '"bar"', ['tag', 'span']]]
+      [['span', '[', 'foo', '=', '"bar"', ']'], ['attribute_equals', 'foo', 'bar', ['tag', 'span']]]
+      [['span', '[', 'foo', '~=', '"bar"', ']'], ['attribute_contains', 'foo', 'bar', ['tag', 'span']]]
 
       # attribute selector with unquoted value
       [['span', '[', 'foo', '=', 'bar', ']'], ['attribute_equals', 'foo', 'bar', ['tag', 'span']]]
@@ -72,6 +72,8 @@ describe 'Fizzle', ->
       ['span:first-child', '<div><span a></span><span></span></div>', 'a']
       ['span[foo]', '<div><span foo a></span><span></span></div>', 'a']
       ['span[foo=bar]', '<div><span foo="bar" a></span><span foo="baz"></span></div>', 'a']
+      ['span.foo.bar', '<div><span class="foo"></span><span class="bar foo" c></span></div>', 'c']
+      ['span span', '<div><span a><span b></span></span></div>', 'b']
     ]
 
     # the single-letter attribute present on the passed-in element

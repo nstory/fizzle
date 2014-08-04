@@ -1,24 +1,51 @@
 class Fizzle
-  @find = (selector, context) ->
+  @find = (selector, element) ->
     ast = @_parse (@_lex selector)
-    @_eval ast, context
+    @_eval ast, [element]
+
+  @pseudos =
+    'first-child': (elem) ->
+      elem.parentNode.firstChild == elem
 
   @_eval = (ast, context) ->
     [cmd, args...] = ast
-    if /^([a-zA-Z0-9\-]+|\*)$/.test cmd
-      context.getElementsByTagName cmd
-    else if /^\./.test cmd
-      className = cmd.slice 1
-      (elem for elem in (@_eval args[0], context) when elem.className.split(' ').indexOf(className) != -1)
-    else if /^#/.test cmd
-      id = cmd.slice 1
-      (elem for elem in (@_eval args[0], context) when elem.id == id)
-    else if /^:first-child$/.test cmd
-      (elem for elem in (@_eval args[0], context) when elem.parentNode.firstChild == elem)
-    else if /^\[\]$/.test cmd
-      attribute = args[0]
-      unfiltered = (@_eval args[1], context)
-      (elem for elem in unfiltered when elem.hasAttribute(attribute))
+    if 'tag' == cmd
+      [tagName] = args
+      ret = []
+      for context_elem in context
+        for elem in (context_elem.getElementsByTagName tagName)
+          ret.push elem
+      ret
+    else if 'attribute_contains' == cmd
+      [attr, value, sub_select] = args
+      elements = (@_eval sub_select, context)
+      ret = []
+      for elem in elements
+        if elem.hasAttribute(attr)
+          if elem.getAttribute(attr).split(' ').indexOf(value) != -1
+            ret.push elem
+      ret
+    else if 'attribute_equals' == cmd
+      [attr, value, sub_select] = args
+      elements = (@_eval sub_select, context)
+      ret = []
+      for elem in elements
+        if elem.getAttribute(attr) == value
+          ret.push elem
+      ret
+    else if 'has_attribute' == cmd
+      [attr, sub_select] = args
+      elements = (@_eval sub_select, context)
+      (elem for elem in elements when elem.hasAttribute(attr))
+    else if 'pseudo' == cmd
+      [name, sub_select] = args
+      elements = (@_eval sub_select, context)
+      if !@pseudos[name]?
+        throw new Error "unknown pseudo selector \"#{name}\""
+      (elem for elem in elements when @pseudos[name](elem))
+    else if 'descendant' == cmd
+      [parent_query, desc_query] = args
+      (@_eval desc_query, (@_eval parent_query, context))
     else
       throw new Error "unknown command #{cmd}"
 
@@ -67,6 +94,10 @@ class Fizzle
             return node
 
     attribute_selector = ->
+      consumeValue = ->
+        val = consume()
+        val.replace /^"|"$/g, ''
+
       consume /^\[$/
       attribute = consume /^[a-zA-Z\-]+$/
       if ']' == next()
@@ -74,12 +105,12 @@ class Fizzle
         ['has_attribute', attribute]
       else if '=' == next()
         consume()
-        value = consume()
+        value = consumeValue()
         consume /^\]$/
         ['attribute_equals', attribute, value]
       else if '~=' == next()
         consume()
-        value = consume()
+        value = consumeValue()
         consume /^\]$/
         ['attribute_contains', attribute, value]
       else
