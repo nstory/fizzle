@@ -22,9 +22,9 @@ describe 'Fizzle', ->
       do (tokens, selector) ->
         it selector, ->
           if tokens == 'throws'
-            expect(-> Fizzle._lex selector).toThrow()
+            expect(-> (new Fizzle())._lex selector).toThrow()
           else
-            expect(Fizzle._lex selector).toEqual tokens
+            expect((new Fizzle())._lex selector).toEqual tokens
 
   describe 'parse', ->
     examples = [
@@ -61,23 +61,23 @@ describe 'Fizzle', ->
       do (example) ->
         [tokens, tree] = example
         it JSON.stringify(tokens), ->
-          expect(Fizzle._parse tokens).toEqual tree
+          expect((new Fizzle)._parse tokens).toEqual tree
 
   describe 'find', ->
     examples = [
-      ['*', '<div a><span b></span><span c></span></div>', 'bc']
-      ['span', '<div><span b></span><span c></span></div>', 'bc']
-      ['span.foo', '<div><span></span><span class="foo" c></span></div>', 'c']
-      ['span#foo', '<div><span a id="foo"></span><span></span></div>', 'a']
-      ['span:first-child', '<div><span a></span><span></span></div>', 'a']
-      ['span[foo]', '<div><span foo a></span><span></span></div>', 'a']
-      ['span[foo=bar]', '<div><span foo="bar" a></span><span foo="baz"></span></div>', 'a']
-      ['span.foo.bar', '<div><span class="foo"></span><span class="bar foo" c></span></div>', 'c']
-      ['span span', '<div><span a><span b></span></span></div>', 'b']
-      ['span>i', '<div><span a><i b><i c></i></i></span></div>', 'b']
-      ['span > i', '<div><span a><i b><i c></i></i></span></div>', 'b']
-      ['span+i', '<div><span></span><i a></i><i></i></div>', 'a']
-      ['span + i', '<div><span></span><i a></i><i></i></div>', 'a']
+      ['*', '<span b></span><span c></span>', 'bc']
+      ['span', '<span b></span><span c></span>', 'bc']
+      ['span.foo', '<span></span><span class="foo" c></span>', 'c']
+      ['span#foo', '<span a id="foo"></span><span></span>', 'a']
+      ['span:first-child', '<span a></span><span></span>', 'a']
+      ['span[foo]', '<span foo a></span><span></span>', 'a']
+      ['span[foo=bar]', '<span foo="bar" a></span><span foo="baz"></span>', 'a']
+      ['span.foo.bar', '<span class="foo"></span><span class="bar foo" c></span>', 'c']
+      ['span span', '<span a><span b></span></span>', 'b']
+      ['span>i', '<span a><i b><i c></i></i></span>', 'b']
+      ['span > i', '<span a><i b><i c></i></i></span>', 'b']
+      ['span+i', '<span></span><i a></i><i></i>', 'a']
+      ['span + i', '<span></span><i a></i><i></i>', 'a']
     ]
 
     # the single-letter attribute present on the passed-in element
@@ -87,20 +87,17 @@ describe 'Fizzle', ->
         throw new Error "#{e} has more than one single-letter attribute!"
       if letters.length == 1 then letters[0] else '.'
 
-    # converts an HTML string into an element (and children); the HTML
-    # string must contain a single parent element
+    # create a new <div> element containing the passed-in HTML
     elementFromHtml = (html) ->
       container = document.createElement 'div'
       container.innerHTML = html
-      if container.childNodes.length != 1
-        throw new Error "unexpected number of child nodes"
-      container.childNodes[0]
+      container
 
     for example in examples
       do (example) ->
         [selector, html, expected] = example
         it selector, ->
           element = elementFromHtml html
-          matched = Fizzle.find selector, element
+          matched = (new Fizzle).find selector, element
           actual = (getCode e for e in matched)
           expect(actual.join '').toEqual expected

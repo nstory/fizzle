@@ -1,13 +1,18 @@
 class Fizzle
-  @find = (selector, element) ->
+  constructor: ->
+    @registerPseudoSelector 'first-child', (elem) ->
+      elem.parentNode.firstChild == elem
+
+  find: (selector, element) ->
     ast = @_parse (@_lex selector)
     @_eval ast, [element]
 
-  @pseudos =
-    'first-child': (elem) ->
-      elem.parentNode.firstChild == elem
+  registerPseudoSelector: (name, fn) ->
+    @_pseudos[name] = fn
 
-  @_eval = (ast, context) ->
+  _pseudos: {}
+
+  _eval: (ast, context) ->
     [cmd, args...] = ast
     if 'tag' == cmd
       [tagName] = args
@@ -40,9 +45,9 @@ class Fizzle
     else if 'pseudo' == cmd
       [name, sub_select] = args
       elements = (@_eval sub_select, context)
-      if !@pseudos[name]?
+      if !@_pseudos[name]?
         throw new Error "unknown pseudo selector \"#{name}\""
-      (elem for elem in elements when @pseudos[name](elem))
+      (elem for elem in elements when @_pseudos[name](elem))
     else if 'descendant' == cmd
       [parent_query, desc_query] = args
       (@_eval desc_query, (@_eval parent_query, context))
@@ -60,7 +65,7 @@ class Fizzle
       throw new Error "unknown command #{cmd}"
 
   # creates an abstract syntax tree from the passed-in array of tokens
-  @_parse = (tokens) ->
+  _parse: (tokens) ->
     selector = ->
       node = simple_selector()
       while hasNext()
@@ -141,10 +146,10 @@ class Fizzle
 
   # breaks up the passed-in string into an array of "tokens" (really
   # just strings)
-  @_lex = (selector) ->
+  _lex: (selector) ->
     re = ///^(
       \*
-     |[a-zA-Z0-9\-]+
+     |[a-zA-Z0-9\-_]+
      |:
      |\.
      |\#
