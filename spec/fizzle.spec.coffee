@@ -5,12 +5,12 @@ describe 'Fizzle', ->
       '*': ['*']
       'p': ['p']
       'h1': ['h1']
-      'p:first-child': ['p', ':first-child']
+      'p:first-child': ['p', ':', 'first-child']
       'p[data-xyzzy]': ['p', '[', 'data-xyzzy', ']']
       'p[foo="bar"]': ['p', '[', 'foo', '=', '"bar"', ']']
       'p[foo~="bar"]': ['p', '[', 'foo', '~=', '"bar"', ']']
-      'p.foo': ['p', '.foo']
-      'p#foo': ['p', '#foo']
+      'p.foo': ['p', '.', 'foo']
+      'p#foo': ['p', '#', 'foo']
       'p%': 'throws'
 
       # combining selectors
@@ -29,32 +29,32 @@ describe 'Fizzle', ->
   describe 'parse', ->
     examples = [
       # simple selectors
-      [['*'], ['*']]
-      [['span'], ['span']]
-      [['span', ':first-child'], [':first-child', ['span']]]
+      [['*'], ['tag', '*']]
+      [['span'], ['tag', 'span']]
+      [['span', ':', 'first-child'], ['pseudo', 'first-child', ['tag', 'span']]]
 
       # attribute selectors
-      [['span', '[', 'foo', ']'], ['[]', 'foo', ['span']]]
-      [['span', '[', 'foo', '=', '"bar"', ']'], ['[=]', 'foo', '"bar"', ['span']]]
-      [['span', '[', 'foo', '~=', '"bar"', ']'], ['[~=]', 'foo', '"bar"', ['span']]]
+      [['span', '[', 'foo', ']'], ['has_attribute', 'foo', ['tag', 'span']]]
+      [['span', '[', 'foo', '=', '"bar"', ']'], ['attribute_equals', 'foo', '"bar"', ['tag', 'span']]]
+      [['span', '[', 'foo', '~=', '"bar"', ']'], ['attribute_contains', 'foo', '"bar"', ['tag', 'span']]]
 
       # attribute selector with unquoted value
-      [['span', '[', 'foo', '=', 'bar', ']'], ['[=]', 'foo', 'bar', ['span']]]
+      [['span', '[', 'foo', '=', 'bar', ']'], ['attribute_equals', 'foo', 'bar', ['tag', 'span']]]
 
       # class and ID selectors
-      [['span', '.foo'], ['.foo', ['span']]]
-      [['span', '#foo'], ['#foo', ['span']]]
+      [['span', '.', 'foo'], ['attribute_contains', 'class', 'foo', ['tag', 'span']]]
+      [['span', '#', 'foo'], ['attribute_equals', 'id', 'foo', ['tag', 'span']]]
 
       # class and ID selectors with implicit element selector
-      [['.foo'], ['.foo', ['*']]]
-      [['#foo'], ['#foo', ['*']]]
+      [['.', 'foo'], ['attribute_contains', 'class', 'foo', ['tag', '*']]]
+      [['#', 'foo'], ['attribute_equals', 'id', 'foo', ['tag', '*']]]
 
       # non-simple selectors
-      [['p', ' ', 'span'], [' ', ['p'], ['span']]]
-      [['p', ' ', 'span', ' ', 'i'], [' ', [' ', ['p'], ['span']], ['i']]]
-      [['p', '>', 'span'], ['>', ['p'], ['span']]]
-      [['p', ' ', 'span', '>', 'i'], ['>', [' ', ['p'], ['span']], ['i']]]
-      [['p', '+', 'span'], ['+', ['p'], ['span']]]
+      [['p', ' ', 'span'], ['descendant', ['tag', 'p'], ['tag', 'span']]]
+      [['p', ' ', 'span', ' ', 'i'], ['descendant', ['descendant', ['tag', 'p'], ['tag', 'span']], ['tag', 'i']]]
+      [['p', '>', 'span'], ['child', ['tag', 'p'], ['tag', 'span']]]
+      [['p', ' ', 'span', '>', 'i'], ['child', ['descendant', ['tag', 'p'], ['tag', 'span']], ['tag', 'i']]]
+      [['p', '+', 'span'], ['adjacent', ['tag', 'p'], ['tag', 'span']]]
     ]
 
     for example in examples

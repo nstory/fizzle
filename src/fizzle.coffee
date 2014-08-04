@@ -22,35 +22,47 @@ class Fizzle
     else
       throw new Error "unknown command #{cmd}"
 
-  # creates a parse tree from the passed-in array of tokens
+  # creates an abstract syntax tree from the passed-in array of tokens
   @_parse = (tokens) ->
     selector = ->
       node = simple_selector()
       while hasNext()
         if /\s+/.test next()
           consume()
-          operator = ' '
-        else if /^(>|\+)$/.test next()
-          operator = consume()
+          operator = 'descendant'
+        else if '>' == next()
+          consume()
+          operator = 'child'
+        else if '+' == next()
+          consume()
+          operator = 'adjacent'
         else
           throw new Error "unexpected token #{next()}"
         node = [operator, node, simple_selector()]
       node
 
     simple_selector = ->
-      node = ['*']
+      node = ['tag', '*']
       while true
         switch
           when !hasNext()
             return node
           when /^[a-zA-Z]|^\*$/.test next()
-            node = [consume()]
-          when /^:first-child$/.test next()
-            node = [consume(), node]
+            node = ['tag', consume()]
+          when /^:$/.test next()
+            consume()
+            name = consume()
+            node = ['pseudo', name, node]
+          when /^\.$/.test next()
+            consume()
+            className = consume()
+            node = ['attribute_contains', 'class', className, node]
+          when /^\#$/.test next()
+            consume()
+            id = consume()
+            node = ['attribute_equals', 'id', id, node]
           when /^\[$/.test next()
             node = attribute_selector().concat [node]
-          when /^\.|^#/.test next()
-            node = [consume(), node]
           else
             return node
 
@@ -59,12 +71,17 @@ class Fizzle
       attribute = consume /^[a-zA-Z\-]+$/
       if ']' == next()
         consume()
-        ['[]', attribute]
-      else if /^(=|~=)$/.test next()
-        operator = consume()
+        ['has_attribute', attribute]
+      else if '=' == next()
+        consume()
         value = consume()
         consume /^\]$/
-        ['[' + operator + ']', attribute, value]
+        ['attribute_equals', attribute, value]
+      else if '~=' == next()
+        consume()
+        value = consume()
+        consume /^\]$/
+        ['attribute_contains', attribute, value]
       else
         throw new Error "unexpected token #{tokens[idx]}"
 
@@ -87,14 +104,14 @@ class Fizzle
     re = ///^(
       \*
      |[a-zA-Z0-9\-]+
-     |:first-child
+     |:
+     |\.
+     |\#
      |\[
      |\]
      |=
      |~=
      |"[^"]*"
-     |\#[a-zA-Z\-]+
-     |\.[a-zA-Z\-]+
      |[\x20]+
      |>
      |\+
