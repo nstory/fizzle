@@ -69,7 +69,9 @@ class Fizzle
     else
       throw new Error "unknown command #{cmd}"
 
-  # creates an abstract syntax tree from the passed-in array of tokens
+  # creates an abstract syntax tree from the passed-in array of tokens; the tree
+  # takes the form [CMD arg1 arg2] where each arg may itself be a node (array)
+  # e.g. [descendant [tag H1] [tag A]] locates an A which descends from an H1
   _parse: (tokens) ->
     selector = ->
       node = simple_selector()
