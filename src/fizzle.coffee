@@ -15,57 +15,74 @@ class Fizzle
 
   _pseudos: {}
 
+  getParents = (e) ->
+    if e.parentElement?
+      return [e.parentElement].concat(getParents(e.parentElement))
+    return []
+
   # evalulates the passed-in abstract syntax tree (as created by _parse)
-  # against the passed-in array of DOM elements
+  # in the context of the passed-in DOM elements; only elements which
+  # descend from those in context will be found and returned
   _eval: (ast, context) ->
-    [cmd, args...] = ast
-    if 'tag' == cmd
-      [tagName] = args
-      ret = []
-      for context_elem in context
-        for elem in (context_elem.getElementsByTagName tagName)
-          ret.push elem
-      ret
-    else if 'attribute_contains' == cmd
-      [attr, value, sub_select] = args
-      elements = (@_eval sub_select, context)
-      ret = []
-      for elem in elements
-        if elem.hasAttribute(attr)
-          if elem.getAttribute(attr).split(' ').indexOf(value) != -1
+    self = this
+    commands =
+      # all descendant elements with this tag name
+      tag: (context, tagName) ->
+        ret = []
+        for context_elem in context
+          for elem in (context_elem.getElementsByTagName tagName)
             ret.push elem
-      ret
-    else if 'attribute_equals' == cmd
-      [attr, value, sub_select] = args
-      elements = (@_eval sub_select, context)
-      ret = []
-      for elem in elements
-        if elem.getAttribute(attr) == value
-          ret.push elem
-      ret
-    else if 'has_attribute' == cmd
-      [attr, sub_select] = args
-      elements = (@_eval sub_select, context)
-      (elem for elem in elements when elem.hasAttribute(attr))
-    else if 'pseudo' == cmd
-      [name, sub_select] = args
-      elements = (@_eval sub_select, context)
-      if !@_pseudos[name]?
-        throw new Error "unknown pseudo selector \"#{name}\""
-      (elem for elem in elements when @_pseudos[name](elem))
-    else if 'descendant' == cmd
-      [parent_query, desc_query] = args
-      (@_eval desc_query, (@_eval parent_query, context))
-    else if 'child' == cmd
-      [parent_query, child_query] = args
-      parent_elements = (@_eval parent_query, context)
-      desc_elements = (@_eval child_query, parent_elements)
-      elem for elem in desc_elements when parent_elements.indexOf(elem.parentNode) != -1
-    else if 'adjacent' == cmd
-      [left_query, right_query] = args
-      left_elements = (@_eval left_query, context)
-      right_elements = (@_eval right_query, context)
-      elem for elem in right_elements when left_elements.indexOf(elem.previousSibling) != -1
+        ret
+
+      # filter elements to those where the specified attribute contains
+      # the passed-in value; the attribute is assumed to contain a space-separated
+      # list of values
+      attribute_contains: (context, attr, value, elements) ->
+        e for e in elements when e.hasAttribute(attr) and e.getAttribute(attr).split(' ').indexOf(value) != -1
+
+      # filter elements to those where the specified attribute is
+      # equal to the passed-in value
+      attribute_equals: (context, attr, value, elements) ->
+        e for e in elements when e.getAttribute(attr)==value
+
+      # filter elements to those having the specified attribute
+      has_attribute: (context, attr, elements) ->
+        e for e in elements when e.hasAttribute attr
+
+      # filter elements to those matching the pseudo selector
+      pseudo: (context, pseudo_name, elements) ->
+        e for e in elements when self._pseudos[pseudo_name](e)
+
+      # filter elements to those which descend from ancestors
+      descendant: (context, ancestors, elements) ->
+        ret = []
+        for elem in elements
+          parents = getParents elem
+          if (p for p in parents when ancestors.indexOf(p) != -1).length != 0
+            ret.push elem
+        ret
+
+      # filter elements to those which are a child of an element
+      # in parents
+      child: (context, parents, elements) ->
+        e for e in elements when parents.indexOf(e.parentElement) != -1
+
+      # filter elements to those which are to the immediate right
+      # of an element in lefties
+      adjacent: (context, lefties, elements) ->
+        e for e in elements when lefties.indexOf(e.previousSibling) != -1
+
+    [cmd, args...] = ast
+    if commands[cmd]?
+      # eval any arguments to this command e.g.
+      # [has_attribute foo [tag span]] -> [has_attribute foo [...list of elements...]]
+      evaled_args = for arg in args
+        if arg instanceof Array
+          @_eval arg, context
+        else
+          arg
+      # run the command, returning the list of elements it matches
+      return commands[cmd].apply null, ([context].concat evaled_args)
     else
       throw new Error "unknown command #{cmd}"
 
